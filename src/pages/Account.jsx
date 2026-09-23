@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AddressAPI } from "../api/services";
+import { AddressAPI, AuthAPI } from "../api/services";
 import { useStore } from "../store/StoreContext";
+import { fileToAvatarDataUrl } from "../utils/image";
 
 const emptyAddr = { fullName: "", phone: "", pincode: "", line1: "", line2: "", city: "", state: "", addressType: "Home" };
 
 export default function Account() {
-  const { user, authLoaded, logout, cartCount, wishCount, toast } = useStore();
+  const { user, authLoaded, logout, cartCount, wishCount, toast, refreshUser } = useStore();
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState([]);
   const [form, setForm] = useState(emptyAddr);
@@ -48,12 +49,32 @@ export default function Account() {
 
   const cancel = () => { setEditingId(null); setForm(emptyAddr); setShowForm(false); };
 
+  const onAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file);
+      await AuthAPI.updateProfile({ avatar: dataUrl });
+      await refreshUser();
+      toast("Profile picture updated");
+    } catch (err) {
+      toast(err.response?.data?.error || err.message || "Could not update photo", "error");
+    }
+  };
+
   return (
-    <div className="container grid" style={{ gridTemplateColumns: "1fr 2fr" }}>
+    <div className="container split-eq">
       <div className="card" style={{ height: "fit-content" }}>
         <div className="flex gap center">
-          <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#2874f0", color: "#fff", display: "grid", placeItems: "center", fontSize: 20 }}>{user?.name?.[0]?.toUpperCase()}</div>
-          <div><b>{user?.name}</b><p className="muted">{user?.email}</p></div>
+          <label className="avatar" style={{ cursor: "pointer" }} title="Change photo">
+            {user?.avatar ? <img src={user.avatar} alt="" /> : user?.name?.[0]?.toUpperCase()}
+            <input type="file" accept="image/*" hidden onChange={onAvatar} />
+          </label>
+          <div>
+            <b>{user?.name}</b>
+            <p className="muted">{user?.email}</p>
+            <p className="muted" style={{ fontSize: 11 }}>Tap photo to change</p>
+          </div>
         </div>
         <div className="mt">
           <Link to="/dashboard" style={{ display: "block", padding: 8 }}>📊 Dashboard</Link>

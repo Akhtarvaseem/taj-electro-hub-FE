@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "../store/StoreContext";
 import { formatPrice, discountPct } from "../utils/format";
+import ProductImg from "../components/ProductImg";
 
 export default function Cart() {
   const { cart, updateCartQty, removeFromCart, user, authLoaded } = useStore();
@@ -19,7 +20,7 @@ export default function Cart() {
     return <div className="container empty"><div className="big">🛒</div><h2>Your cart is empty</h2><Link to="/products" className="btn btn-blue" style={{ display: "inline-block", marginTop: 12 }}>Shop now</Link></div>;
 
   return (
-    <div className="container grid" style={{ gridTemplateColumns: "2fr 1fr" }}>
+    <div className="container split">
       <div>
         <div className="card">
           <h2 className="mb">My Cart ({cart.length})</h2>
@@ -27,7 +28,7 @@ export default function Cart() {
             const off = discountPct(c.product.mrp, c.product.price);
             return (
               <div key={c.id} className="flex gap" style={{ borderTop: "1px solid #eee", padding: "14px 0" }}>
-                <img src={c.product.images?.[0]} style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 6 }} />
+                <ProductImg src={c.product.images?.[0]} title={c.product.title} style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 6 }} />
                 <div style={{ flex: 1 }}>
                   <Link to={`/product/${c.product.slug}`}>{c.product.title}</Link>
                   <div className="mt">
@@ -35,15 +36,16 @@ export default function Cart() {
                     {off > 0 && <><span className="mrp">{formatPrice(c.product.mrp)}</span> <span className="off">{off}% off</span></>}
                   </div>
                   <div className="flex center gap mt">
-                    <button className="btn btn-blue" style={{ padding: "2px 10px" }} onClick={() => updateCartQty(c.id, c.quantity - 1)}>−</button>
-                    <span>{c.quantity}</span>
-                    <button
-                      className="btn btn-blue"
-                      style={{ padding: "2px 10px", ...(c.quantity >= c.product.stock ? { background: "#bdbdbd" } : {}) }}
-                      disabled={c.quantity >= c.product.stock}
-                      onClick={() => updateCartQty(c.id, c.quantity + 1)}
-                    >+</button>
-                    <button onClick={() => removeFromCart(c.id)} style={{ border: 0, background: "none", cursor: "pointer", fontWeight: 600 }}>REMOVE</button>
+                    <div className="qty-box">
+                      <button type="button" onClick={() => updateCartQty(c.id, c.quantity - 1)}>−</button>
+                      <span>{c.quantity}</span>
+                      <button
+                        type="button"
+                        disabled={c.quantity >= c.product.stock}
+                        onClick={() => updateCartQty(c.id, c.quantity + 1)}
+                      >+</button>
+                    </div>
+                    <button type="button" onClick={() => removeFromCart(c.id)} style={{ border: 0, background: "none", cursor: "pointer", fontWeight: 600 }}>REMOVE</button>
                   </div>
                   {/* Stock status per item */}
                   {c.product.stock <= 0 ? (

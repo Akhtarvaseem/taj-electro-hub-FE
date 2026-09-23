@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { AdminAPI, ProductAPI, CategoryAPI } from "../api/services";
 import { useStore } from "../store/StoreContext";
 import { formatPrice } from "../utils/format";
+import CategoryIcon from "../components/CategoryIcon";
+import ProductImg from "../components/ProductImg";
 
 const emptyForm = { title: "", brand: "", categoryId: "", price: "", mrp: "", stock: "", description: "", images: "", featured: false };
 const STATUS = ["Placed", "Packed", "Shipped", "Delivered", "Cancelled"];
@@ -32,7 +34,7 @@ export default function Admin() {
   useEffect(() => { if (user?.role === "ADMIN") { loadStats(); loadProducts(); } }, [user]);
 
   if (authLoaded && (!user || user.role !== "ADMIN"))
-    return <div className="container empty"><h2>Admin access required</h2><p className="muted">Login as admin@shop.com / admin123</p><Link to="/login" className="btn btn-blue" style={{ display: "inline-block", marginTop: 12 }}>Login</Link></div>;
+    return <div className="container empty"><h2>Admin access required</h2><p className="muted">Please log in with an admin account to continue.</p><Link to="/login" className="btn btn-blue" style={{ display: "inline-block", marginTop: 12 }}>Login</Link></div>;
 
   // ---------- Product create / update ----------
   const submitProduct = async (e) => {
@@ -121,8 +123,8 @@ export default function Admin() {
 
   return (
     <div className="container">
-      <div className="hero" style={{ background: "linear-gradient(90deg,#172337,#2874f0)", padding: 24 }}>
-        <div><h2 style={{ fontSize: 22 }}>⚙️ Admin Dashboard</h2><p>ElectroHub · Taj Electric &amp; Electronics</p></div>
+      <div className="promo-tile" style={{ background: "linear-gradient(90deg,#0b2c4a,#125d8a)", marginBottom: 16 }}>
+        <div><h2 style={{ fontSize: 22 }}>⚙️ Admin Dashboard</h2><p>TajElectroHub · Taj Electric &amp; Electronics</p></div>
       </div>
 
       <div className="tabs">
@@ -186,7 +188,7 @@ export default function Admin() {
 
       {/* PRODUCTS */}
       {tab === "products" && (
-        <div className="grid" style={{ gridTemplateColumns: "1fr 2fr" }}>
+        <div className="split-eq">
           <form className="card" onSubmit={submitProduct} style={{ height: "fit-content" }}>
             <h3 className="mb">{editingSlug ? "✏️ Edit Product" : "➕ Add Product"}</h3>
             <input className="input" placeholder="Title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -211,7 +213,7 @@ export default function Admin() {
             <div style={{ maxHeight: 650, overflowY: "auto" }}>
               {products.map((p) => (
                 <div key={p.id} className="flex gap center" style={{ border: "1px solid #eee", borderRadius: 6, padding: 8, marginBottom: 6 }}>
-                  <img src={p.images?.[0]} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 4 }} />
+                  <ProductImg src={p.images?.[0]} title={p.title} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 4 }} />
                   <div style={{ flex: 1 }}>
                     <div>{p.title}</div>
                     <span className="muted">
@@ -232,11 +234,17 @@ export default function Admin() {
 
       {/* CATEGORIES CRUD */}
       {tab === "categories" && (
-        <div className="grid" style={{ gridTemplateColumns: "1fr 2fr" }}>
+        <div className="split-eq">
           <form className="card" onSubmit={submitCategory} style={{ height: "fit-content" }}>
             <h3 className="mb">{editingCatId ? "✏️ Edit Category" : "➕ Add Category"}</h3>
             <input className="input" placeholder="Category name" required value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} />
-            <input className="input" placeholder="Icon emoji (e.g. 📱)" value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} />
+            <input className="input" placeholder="Emoji (📱) OR image URL (https://…)" value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} />
+            <p className="muted" style={{ fontSize: 12, marginTop: -6, marginBottom: 8 }}>Paste an emoji, or a full image link like https://…/icon.png</p>
+            {catForm.icon && (
+              <div className="flex center gap mb" style={{ padding: 8, background: "#f7f7f7", borderRadius: 8 }}>
+                Preview: <CategoryIcon icon={catForm.icon} size={36} />
+              </div>
+            )}
             <button className="btn btn-blue" style={{ width: "100%" }}>{editingCatId ? "Update" : "Add"} Category</button>
             {editingCatId && <button type="button" onClick={() => { setEditingCatId(null); setCatForm({ name: "", icon: "" }); }} className="btn mt" style={{ width: "100%", background: "#9e9e9e" }}>Cancel</button>}
           </form>
@@ -244,7 +252,7 @@ export default function Admin() {
             <h3 className="mb">All Categories ({cats.length})</h3>
             {cats.map((c) => (
               <div key={c.id} className="flex gap center" style={{ border: "1px solid #eee", borderRadius: 6, padding: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 24 }}>{c.icon}</span>
+                <CategoryIcon icon={c.icon} size={32} />
                 <div style={{ flex: 1 }}><b>{c.name}</b><span className="muted"> /{c.slug}</span></div>
                 <button onClick={() => startEditCat(c)} style={btnMini("#e3f2fd", "#1565c0")}>Edit</button>
                 <button onClick={() => removeCat(c.id)} style={btnMini("#ffebee", "#d32f2f")}>Delete</button>

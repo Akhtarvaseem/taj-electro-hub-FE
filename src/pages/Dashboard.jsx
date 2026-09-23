@@ -27,7 +27,7 @@ export default function Dashboard() {
   return (
     <div className="container">
       <div className="hero" style={{ padding: 24 }}>
-        <div><h2 style={{ fontSize: 24 }}>Welcome back, {user?.name?.split(" ")[0]} 👋</h2><p>Your ElectroHub account overview</p></div>
+        <div><h2 style={{ fontSize: 24 }}>Welcome back, {user?.name?.split(" ")[0]} 👋</h2><p>Your TajElectroHub account overview</p></div>
       </div>
 
       <div className="grid grid-4 mb">
@@ -37,7 +37,7 @@ export default function Dashboard() {
         <Link to="/orders" className="stat-card"><div>💰</div><div className="stat-val">{formatPrice(totalSpent)}</div><div className="stat-label">Total Spent</div></Link>
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: "2fr 1fr" }}>
+      <div className="split">
         <div className="card">
           <h3 className="mb">Recent Orders</h3>
           {orders.length === 0 ? <p className="muted">No orders yet.</p> :

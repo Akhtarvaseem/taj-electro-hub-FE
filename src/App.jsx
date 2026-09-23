@@ -13,6 +13,8 @@ import Login from "./pages/Login";
 import Account from "./pages/Account";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import About from "./pages/About";
+import Developer from "./pages/Developer";
 
 export default function App() {
   return (
@@ -32,6 +34,8 @@ export default function App() {
           <Route path="/account" element={<Account />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/developer" element={<Developer />} />
         </Routes>
       </main>
       <Footer />

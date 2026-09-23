@@ -6,11 +6,16 @@ export const AuthAPI = {
   register: (data) => api.post("/auth/register", data).then((r) => r.data),
   login: (data) => api.post("/auth/login", data).then((r) => r.data),
   me: () => api.get("/auth/me").then((r) => r.data),
+  updateProfile: (data) => api.put("/auth/profile", data).then((r) => r.data),
+};
+
+export const DeliveryAPI = {
+  check: (pincode) => api.get("/delivery/check", { params: { pincode } }).then((r) => r.data),
 };
 
 export const ProductAPI = {
   list: (params) => api.get("/products", { params }).then((r) => r.data.products),
-  detail: (slug) => api.get(`/products/${slug}`).then((r) => r.data),
+  detail: (slug) => api.get(`/products/${encodeURIComponent(slug)}`).then((r) => r.data),
   create: (data) => api.post("/products", data).then((r) => r.data),
   update: (slug, data) => api.put(`/products/${slug}`, data).then((r) => r.data),
   remove: (slug) => api.delete(`/products/${slug}`).then((r) => r.data),

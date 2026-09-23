@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AddressAPI, OrderAPI } from "../api/services";
+import { AddressAPI, OrderAPI, DeliveryAPI } from "../api/services";
 import { useStore } from "../store/StoreContext";
-import { formatPrice } from "../utils/format";
+import { formatPrice, normalizePin } from "../utils/format";
+import PincodeCheck from "../components/PincodeCheck";
 
 const empty = { fullName: "", phone: "", pincode: "", line1: "", line2: "", city: "", state: "", addressType: "Home" };
 const DISABLED = ["UPI (GPay / PhonePe)", "Credit / Debit Card", "Net Banking", "Wallet"];
@@ -33,7 +34,9 @@ export default function Checkout() {
 
   const saveAddress = async (e) => {
     e.preventDefault();
-    const a = await AddressAPI.create(form);
+    const pin = normalizePin(form.pincode);
+    if (!pin) return toast("Enter a valid 6-digit pincode", "error");
+    const a = await AddressAPI.create({ ...form, pincode: pin });
     setForm(empty);
     await loadAddr();
     setSelected(a.id);
@@ -43,11 +46,23 @@ export default function Checkout() {
   const placeOrder = async () => {
     const addr = addresses.find((a) => a.id === selected);
     if (!addr) return toast("Please select an address", "error");
+    const pin = normalizePin(addr.pincode || addr.pinCode || addr.address);
+    if (!pin) return toast("Selected address is missing a valid 6-digit pincode", "error");
     setPlacing(true);
     try {
+      try {
+        const check = await DeliveryAPI.check(pin);
+        if (check && check.available === false) {
+          toast(check.error || "Delivery is not available to this pincode", "error");
+          setPlacing(false);
+          return;
+        }
+      } catch {
+        /* backend check optional — PIN already validated locally */
+      }
       const data = await OrderAPI.place({
-        fullName: addr.fullName, phone: addr.phone,
-        address: `${addr.line1}, ${addr.line2 ? addr.line2 + ", " : ""}${addr.city}, ${addr.state} - ${addr.pincode}`,
+        fullName: addr.fullName, phone: addr.phone, pincode: pin,
+        address: `${addr.line1}, ${addr.line2 ? addr.line2 + ", " : ""}${addr.city}, ${addr.state} - ${pin}`,
       }, "COD");
       await refreshCart();
       navigate(`/order-success?id=${data.order.id}`);
@@ -57,10 +72,12 @@ export default function Checkout() {
   };
 
   return (
-    <div className="container grid" style={{ gridTemplateColumns: "2fr 1fr" }}>
+    <div className="container split">
       <div>
         <div className="card mb">
           <h3 className="mb">1. Delivery Address</h3>
+          <PincodeCheck compact />
+          <div className="mb" />
           {addresses.map((a) => (
             <label key={a.id} className="flex gap" style={{ border: selected === a.id ? "1px solid #2874f0" : "1px solid #eee", borderRadius: 6, padding: 12, marginBottom: 8, cursor: "pointer" }}>
               <input type="radio" checked={selected === a.id} onChange={() => setSelected(a.id)} />
@@ -74,12 +91,15 @@ export default function Checkout() {
             {showForm ? "− Cancel" : "+ Add a new address"}
           </button>
           {showForm && (
-            <form onSubmit={saveAddress} className="mt">
-              {["fullName", "phone", "pincode", "city", "line1", "line2", "state"].map((f) => (
-                <input key={f} className="input" placeholder={f} required={f !== "line2"} value={form[f]}
-                  onChange={(e) => setForm({ ...form, [f]: e.target.value })} />
-              ))}
-              <button className="btn btn-blue">Save Address</button>
+            <form onSubmit={saveAddress} className="mt" autoComplete="on">
+              <input className="input" name="fullName" autoComplete="name" placeholder="Full name" required value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+              <input className="input" name="phone" autoComplete="tel" placeholder="Phone" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <input className="input" name="postal-code" autoComplete="postal-code" inputMode="numeric" maxLength={6} placeholder="Pincode (6 digits)" required value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })} />
+              <input className="input" name="city" autoComplete="address-level2" placeholder="City" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+              <input className="input" name="line1" autoComplete="address-line1" placeholder="House / Street" required value={form.line1} onChange={(e) => setForm({ ...form, line1: e.target.value })} />
+              <input className="input" name="line2" autoComplete="address-line2" placeholder="Landmark (optional)" value={form.line2} onChange={(e) => setForm({ ...form, line2: e.target.value })} />
+              <input className="input" name="state" autoComplete="address-level1" placeholder="State" required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+              <button type="submit" className="btn btn-blue">Save Address</button>
             </form>
           )}
         </div>

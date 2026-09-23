@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { OrderAPI } from "../api/services";
 import { useStore } from "../store/StoreContext";
 import { formatPrice } from "../utils/format";
+import ProductImg from "../components/ProductImg";
 
 const STEPS = ["Placed", "Packed", "Shipped", "Delivered"];
 
@@ -80,7 +81,7 @@ export default function Orders() {
 
               {o.items.map((it) => (
                 <div key={it.id} className="flex gap center" style={{ marginBottom: 6 }}>
-                  <img src={it.image} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 4 }} />
+                  <ProductImg src={it.image} title={it.title} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 4 }} />
                   <div><div>{it.title}</div><span className="muted">Qty {it.quantity} · {formatPrice(it.price)}</span></div>
                 </div>
               ))}

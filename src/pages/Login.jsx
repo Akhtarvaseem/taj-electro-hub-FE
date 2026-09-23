@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthAPI } from "../api/services";
 import { useStore } from "../store/StoreContext";
+import Logo from "../components/Logo";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,32 +27,41 @@ export default function Login() {
     } finally { setLoading(false); }
   };
 
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
   return (
-    <div className="container flex" style={{ maxWidth: 800 }}>
-      <div style={{ width: "40%", background: "#2874f0", color: "#fff", padding: 32, borderRadius: "8px 0 0 8px" }}>
-        <h2>{mode === "login" ? "Login" : "Sign Up"}</h2>
-        <p style={{ opacity: .8, marginTop: 10 }}>Access your ElectroHub orders, wishlist &amp; more.</p>
-        <div style={{ marginTop: 40, fontSize: 40 }}>⚡ ElectroHub</div>
-        <div style={{ fontSize: 12, opacity: .7 }}>Taj Electric &amp; Electronics</div>
+    <div className="container login-wrap">
+      <div className="login-side">
+        <Logo size={56} />
+        <h2 style={{ marginTop: 16 }}>{mode === "login" ? "Login" : "Sign Up"}</h2>
+        <p style={{ opacity: .85, marginTop: 10 }}>
+          Access your TajElectroHub orders, wishlist &amp; more.
+        </p>
+        <div style={{ marginTop: 28, fontWeight: 800, fontSize: 22 }}>TajElectroHub</div>
+        <div style={{ fontSize: 12, opacity: .75 }}>Taj Electric &amp; Electronics</div>
       </div>
-      <div className="card" style={{ flex: 1, borderRadius: "0 8px 8px 0" }}>
-        <form onSubmit={submit}>
-          {mode === "register" && <input className="input" placeholder="Full Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
-          <input className="input" type="email" placeholder="Email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          {mode === "register" && <input className="input" placeholder="Phone (optional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
-          <input className="input" type="password" placeholder="Password (min 6)" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+      <div className="card login-form">
+        <form onSubmit={submit} autoComplete="on">
+          {mode === "register" && (
+            <input className="input" name="name" placeholder="Full Name" required value={form.name} onChange={set("name")} />
+          )}
+          <input className="input" name="email" type="email" autoComplete="email" placeholder="Email" required value={form.email} onChange={set("email")} />
+          {mode === "register" && (
+            <input className="input" name="phone" autoComplete="tel" placeholder="Phone (optional)" value={form.phone} onChange={set("phone")} />
+          )}
+          <input className="input" name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder="Password (min 6)" required value={form.password} onChange={set("password")} />
           {error && <p style={{ color: "#d32f2f" }}>{error}</p>}
-          <button className="btn btn-orange" style={{ width: "100%" }} disabled={loading}>
+          <button type="submit" className="btn btn-orange" style={{ width: "100%" }} disabled={loading}>
             {loading ? "Please wait…" : mode === "login" ? "Login" : "Create Account"}
           </button>
         </form>
-        <button onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-          style={{ border: 0, background: "none", color: "#2874f0", fontWeight: 600, marginTop: 16, cursor: "pointer", width: "100%" }}>
+        <button
+          type="button"
+          onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
+          style={{ border: 0, background: "none", color: "var(--blue)", fontWeight: 600, marginTop: 16, cursor: "pointer", width: "100%" }}
+        >
           {mode === "login" ? "New here? Create an account" : "Existing user? Log in"}
         </button>
-        <div className="card mt" style={{ background: "#f7f7f7", fontSize: 12 }}>
-          <b>Demo admin:</b> admin@shop.com / admin123
-        </div>
       </div>
     </div>
   );

@@ -27,8 +27,7 @@ export default defineConfig({
     // To use it, set VITE_API_BASE_URL="" in frontend-react/.env
     proxy: {
       "/api": {
-        // target: "http://localhost:8080",
-        target: "https://taj-electro-hub-be.onrender.com",
+        target: "http://localhost:8080",
         changeOrigin: true,
       },
     },

@@ -4,24 +4,37 @@ import { ProductAPI, ReviewAPI } from "../api/services";
 import { useStore } from "../store/StoreContext";
 import { formatPrice, discountPct } from "../utils/format";
 import ProductCard from "../components/ProductCard";
+import PincodeCheck from "../components/PincodeCheck";
+import { resolveImage } from "../utils/images";
 
 export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { addToCart, toggleWishlist, isWished, user, toast } = useStore();
+  const { addToCart, updateCartQty, cart, toggleWishlist, isWished, user, toast } = useStore();
 
   const [data, setData] = useState(null);
+  const [error, setError] = useState("");
   const [img, setImg] = useState(0);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
 
-  const load = () => ProductAPI.detail(slug).then((d) => setData(d)).catch(() => {});
+  const load = () => {
+    setError("");
+    setData(null);
+    const key = decodeURIComponent(slug || "");
+    ProductAPI.detail(key)
+      .then((d) => setData(d))
+      .catch(() => setError("Product not found"));
+  };
   useEffect(() => { load(); setImg(0); }, [slug]);
 
+  if (error) return <div className="container empty"><h2>{error}</h2><button className="btn btn-blue mt" onClick={() => navigate("/products")}>Back to shop</button></div>;
   if (!data) return <div className="container empty">Loading…</div>;
   const { product, reviews, related } = data;
   const off = discountPct(product.mrp, product.price);
-  const images = product.images?.length ? product.images : ["https://picsum.photos/seed/x/600"];
+  const images = (product.images?.length ? product.images : [""]).map((im) =>
+    resolveImage(im, product.title)
+  );
 
   const buyNow = async () => { await addToCart(product.id); navigate("/checkout"); };
 
@@ -47,10 +60,23 @@ export default function ProductDetail() {
           <div style={{ flex: 1 }}>
             <img src={images[img]} style={{ width: "100%", aspectRatio: 1, objectFit: "contain", background: "#fafafa", borderRadius: 8 }} />
             <div className="flex gap mt">
-              <button className="btn btn-yellow" style={{ flex: 1, ...(product.stock <= 0 ? { background: "#bdbdbd" } : {}) }}
-                disabled={product.stock <= 0} onClick={() => addToCart(product.id)}>
-                {product.stock <= 0 ? "OUT OF STOCK" : "🛒 ADD TO CART"}
-              </button>
+              {product.stock <= 0 ? (
+                <button className="btn" style={{ flex: 1, background: "#bdbdbd" }} disabled>OUT OF STOCK</button>
+              ) : cart.find((c) => c.product.id === product.id) ? (
+                <div className="qty-box" style={{ flex: 1 }}>
+                  <button type="button" onClick={() => {
+                    const it = cart.find((c) => c.product.id === product.id);
+                    if (it) updateCartQty(it.id, it.quantity - 1);
+                  }}>−</button>
+                  <span>{cart.find((c) => c.product.id === product.id)?.quantity}</span>
+                  <button type="button" onClick={() => {
+                    const it = cart.find((c) => c.product.id === product.id);
+                    if (it) updateCartQty(it.id, it.quantity + 1);
+                  }}>+</button>
+                </div>
+              ) : (
+                <button className="btn btn-yellow" style={{ flex: 1 }} onClick={() => addToCart(product.id)}>🛒 ADD TO CART</button>
+              )}
               <button className="btn btn-orange" style={{ flex: 1, ...(product.stock <= 0 ? { background: "#bdbdbd" } : {}) }}
                 disabled={product.stock <= 0} onClick={buyNow}>⚡ BUY NOW</button>
             </div>
@@ -83,6 +109,8 @@ export default function ProductDetail() {
               ✔ In stock — {product.stock} available
             </p>
           )}
+
+          <PincodeCheck />
 
           <div className="card mt" style={{ background: "#f7f7f7" }}>
             <p>💵 <b>Cash on Delivery</b> available</p>

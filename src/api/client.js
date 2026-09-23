@@ -1,15 +1,13 @@
 import axios from "axios";
 
 // Central Axios instance — the ONLY place that talks to the backend.
-//
-// Two supported modes (set in frontend-react/.env):
-//  1. Direct:  VITE_API_BASE_URL="http://localhost:8080"  -> calls http://localhost:8080/api/...
-//  2. Proxy:   VITE_API_BASE_URL=""                        -> calls /api/... (Vite proxies to backend)
+// Deployed backend (Render). Override with VITE_API_BASE_URL for local dev.
 const RAW_BASE =
-  import.meta.env.VITE_API_BASE_URL !== undefined
+  import.meta.env.VITE_API_BASE_URL !== undefined &&
+  import.meta.env.VITE_API_BASE_URL !== ""
     ? import.meta.env.VITE_API_BASE_URL
-    // : "http://localhost:8080";
-    : "https://taj-electro-hub-be.onrender.com";
+    : "http://localhost:8080";
+    // : "https://taj-electro-hub-be.onrender.com";
 
 const api = axios.create({
   baseURL: `${RAW_BASE}/api`,

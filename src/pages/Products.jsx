@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ProductAPI, CategoryAPI } from "../api/services";
 import ProductCard from "../components/ProductCard";
+import CategoryIcon from "../components/CategoryIcon";
 
 export default function Products() {
   const [params, setParams] = useSearchParams();
@@ -41,7 +42,7 @@ export default function Products() {
         {cats.map((c) => (
           <div key={c.id} style={{ cursor: "pointer", padding: "3px 0", color: category === c.slug ? "#2874f0" : "#555" }}
             onClick={() => setParam("category", c.slug)}>
-            {c.icon} {c.name}
+            <span className="flex center gap"><CategoryIcon icon={c.icon} size={20} /> {c.name}</span>
           </div>
         ))}
         <p style={{ fontWeight: 600, margin: "12px 0 6px" }}>Max Price</p>

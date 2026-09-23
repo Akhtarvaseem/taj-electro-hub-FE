@@ -2,53 +2,60 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ProductAPI, CategoryAPI } from "../api/services";
 import ProductCard from "../components/ProductCard";
+import CategoryIcon from "../components/CategoryIcon";
+import HeroSlider from "../components/HeroSlider";
+import DiscountSlider from "../components/DiscountSlider";
+import Ticker from "../components/Ticker";
+import { maxDiscount } from "../utils/format";
 
 export default function Home() {
   const [cats, setCats] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [latest, setLatest] = useState([]);
+  const [all, setAll] = useState([]);
 
   useEffect(() => {
     CategoryAPI.list().then(setCats).catch(() => {});
     ProductAPI.list({ featured: "true" }).then(setFeatured).catch(() => {});
     ProductAPI.list({ sort: "newest" }).then((p) => setLatest(p.slice(0, 12))).catch(() => {});
+    ProductAPI.list({}).then(setAll).catch(() => {});
   }, []);
 
+  const off = maxDiscount(all.length ? all : featured.concat(latest));
+
   return (
-    <div className="container">
-      <div className="cat-strip">
-        {cats.map((c) => (
-          <Link to={`/products?category=${c.slug}`} className="cat-item" key={c.id}>
-            <div className="cat-icon">{c.icon}</div>
-            <div style={{ fontSize: 12 }}>{c.name}</div>
-          </Link>
-        ))}
-      </div>
-
-      <div className="hero">
-        <div>
-          <p>Up to 80% off on Electronics</p>
-          <h2>ElectroHub Sale ⚡</h2>
-          <Link to="/products" className="btn" style={{ background: "#fff", color: "#212121", display: "inline-block", marginTop: 12 }}>
-            Shop Now →
-          </Link>
+    <div>
+      <Ticker maxOff={off} />
+      <div className="container">
+        <div className="cat-strip">
+          {cats.map((c) => (
+            <Link to={`/products?category=${c.slug}`} className="cat-item" key={c.id}>
+              <div className="cat-icon"><CategoryIcon icon={c.icon} size={32} /></div>
+              <div style={{ fontSize: 12 }}>{c.name}</div>
+            </Link>
+          ))}
         </div>
-        <div className="emoji">🛍️</div>
-      </div>
 
-      {featured.length > 0 && (
-        <Section title="🔥 Deals of the Day" items={featured} />
-      )}
-      {latest.length > 0 && (
-        <Section title="✨ Newly Added" items={latest} />
-      )}
+        <HeroSlider maxOff={off} />
 
-      <div className="grid grid-2 mt">
-        <div className="hero" style={{ background: "linear-gradient(90deg,#2874f0,#4a90ff)", padding: 24, margin: 0 }}>
-          <div><p>ElectroHub Assurance</p><h2 style={{ fontSize: 22 }}>Genuine Electronics ⚡</h2></div>
-        </div>
-        <div className="hero" style={{ background: "linear-gradient(90deg,#ff9f00,#ffb733)", padding: 24, margin: 0 }}>
-          <div><p>Cash on Delivery</p><h2 style={{ fontSize: 22 }}>Pay when it arrives 💵</h2></div>
+        <DiscountSlider products={all.length ? all : featured} />
+
+        {featured.length > 0 && (
+          <Section title="🔥 Deals of the Day" items={featured} />
+        )}
+        {latest.length > 0 && (
+          <Section title="✨ Newly Added" items={latest} />
+        )}
+
+        <div className="grid grid-2 mt">
+          <div className="promo-tile" style={{ background: "linear-gradient(90deg,#0b2c4a,#1a7a9c)" }}>
+            <p>TajElectroHub Assurance</p>
+            <h3>Genuine Electronics ⚡</h3>
+          </div>
+          <div className="promo-tile" style={{ background: "linear-gradient(90deg,#ff9f00,#ffb733)" }}>
+            <p>Cash on Delivery</p>
+            <h3>Pay when it arrives 💵</h3>
+          </div>
         </div>
       </div>
     </div>
