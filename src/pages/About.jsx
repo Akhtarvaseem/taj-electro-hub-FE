@@ -56,7 +56,7 @@ export default function About() {
 
       <div className="card mb">
         <h3 className="mb">Contact</h3>
-        <p>📞 +91 98765 43210</p>
+        <p>📞 +91 98xx xxxx xx</p>
         <p>📧 support@tajelectric.com</p>
         <p>🌐 <Link to="/">taj-electro-hub-fe.vercel.app</Link></p>
       </div>

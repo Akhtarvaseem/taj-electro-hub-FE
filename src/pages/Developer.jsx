@@ -20,7 +20,7 @@ export default function Developer() {
             </tr>
             <tr>
               <td>Developed by</td>
-              <td><b>Ravi Kumar</b></td>
+              <td><b>Akhtar</b></td>
             </tr>
             <tr>
               <td>App version</td>
