@@ -5,6 +5,7 @@ import { useStore } from "../store/StoreContext";
 import { formatPrice } from "../utils/format";
 import CategoryIcon from "../components/CategoryIcon";
 import ProductImg from "../components/ProductImg";
+import { whatsappDispatchUrl, VISIT_FEE } from "../data/serviceCatalog";
 
 const emptyForm = { title: "", brand: "", categoryId: "", price: "", mrp: "", stock: "", description: "", images: "", featured: false };
 const STATUS = ["Placed", "Packed", "Shipped", "Delivered", "Cancelled"];
@@ -16,14 +17,14 @@ export default function Admin() {
   const [products, setProducts] = useState([]);
   const [cats, setCats] = useState([]);
   const [form, setForm] = useState(emptyForm);
-  const [editingSlug, setEditingSlug] = useState(null); // null = create mode
-
-  // category form
+  const [editingSlug, setEditingSlug] = useState(null);
   const [catForm, setCatForm] = useState({ name: "", icon: "" });
   const [editingCatId, setEditingCatId] = useState(null);
-
-  // discount
   const [catDiscount, setCatDiscount] = useState({ categoryId: "", percent: "" });
+  const [complaints, setComplaints] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
+  const [techForm, setTechForm] = useState({ name: "", phone: "", specialization: "AC & Refrigerator Expert" });
+  const [svcFilter, setSvcFilter] = useState("All");
 
   const loadStats = () => AdminAPI.stats().then(setData).catch(() => {});
   const loadProducts = () => {
@@ -31,24 +32,30 @@ export default function Admin() {
     CategoryAPI.list().then(setCats).catch(() => {});
   };
 
-  useEffect(() => { if (user?.role === "ADMIN") { loadStats(); loadProducts(); } }, [user]);
+  useEffect(() => {
+    if (user?.role === "ADMIN") {
+      loadStats(); loadProducts();
+      AdminAPI.complaints().then(setComplaints).catch(() => {});
+      AdminAPI.technicians().then(setTechnicians).catch(() => {});
+    }
+  }, [user]);
 
   if (authLoaded && (!user || user.role !== "ADMIN"))
-    return <div className="container empty"><h2>Admin access required</h2><p className="muted">Please log in with an admin account to continue.</p><Link to="/login" className="btn btn-blue" style={{ display: "inline-block", marginTop: 12 }}>Login</Link></div>;
+    return (
+      <div className="container empty">
+        <h2>Admin access required</h2>
+        <p className="muted">Please log in with an admin account to continue.</p>
+        <Link to="/login" className="btn btn-blue" style={{ display: "inline-block", marginTop: 12 }}>Login</Link>
+      </div>
+    );
 
-  // ---------- Product create / update ----------
   const submitProduct = async (e) => {
     e.preventDefault();
     const images = form.images.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
-    const payload = { ...form, images: images.length ? images : [`https://picsum.photos/seed/${Date.now()}/500`] };
+    const payload = { ...form, images: images.length ? images : ["https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?auto=format&fit=crop&w=800&q=80"] };
     try {
-      if (editingSlug) {
-        await ProductAPI.update(editingSlug, payload);
-        toast("Product updated");
-      } else {
-        await ProductAPI.create(payload);
-        toast("Product added");
-      }
+      if (editingSlug) { await ProductAPI.update(editingSlug, payload); toast("Product updated"); }
+      else { await ProductAPI.create(payload); toast("Product added"); }
       setForm(emptyForm); setEditingSlug(null); loadProducts(); loadStats();
     } catch (err) { toast(err.response?.data?.error || "Failed to save product", "error"); }
   };
@@ -63,8 +70,6 @@ export default function Admin() {
     setTab("products");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  const cancelEdit = () => { setEditingSlug(null); setForm(emptyForm); };
 
   const removeProduct = async (slug) => {
     if (!window.confirm("Delete this product?")) return;
@@ -93,7 +98,6 @@ export default function Admin() {
     } catch (err) { toast(err.response?.data?.error || "Failed", "error"); }
   };
 
-  // ---------- Category CRUD ----------
   const submitCategory = async (e) => {
     e.preventDefault();
     try {
@@ -104,16 +108,9 @@ export default function Admin() {
     } catch (err) { toast(err.response?.data?.error || "Failed", "error"); }
   };
 
-  const startEditCat = (c) => { setEditingCatId(c.id); setCatForm({ name: c.name, icon: c.icon || "" }); };
-  const removeCat = async (id) => {
-    if (!window.confirm("Delete this category? Products in it will become uncategorized.")) return;
-    await CategoryAPI.remove(id); toast("Category deleted");
-    CategoryAPI.list().then(setCats); loadProducts();
-  };
-
   const updateStatus = async (id, status) => {
     await AdminAPI.updateOrder(id, status);
-    setData((d) => ({ ...d, recentOrders: d.recentOrders.map((o) => o.id === id ? { ...o, status } : o) }));
+    setData((d) => ({ ...d, recentOrders: (d.recentOrders || []).map((o) => o.id === id ? { ...o, status } : o) }));
     toast("Order updated");
   };
 
@@ -123,24 +120,24 @@ export default function Admin() {
 
   return (
     <div className="container">
-      <div className="promo-tile" style={{ background: "linear-gradient(90deg,#0b2c4a,#125d8a)", marginBottom: 16 }}>
-        <div><h2 style={{ fontSize: 22 }}>⚙️ Admin Dashboard</h2><p>TajElectroHub · Taj Electric &amp; Electronics</p></div>
+      <div className="promo-tile" style={{ background: "linear-gradient(90deg,#0a4d8c,#1a73e8)", marginBottom: 16 }}>
+        <h2 style={{ fontSize: 22 }}>⚙️ Admin Dashboard</h2>
+        <p>TajElectroHub · Taj Electric &amp; Electronics</p>
       </div>
 
       <div className="tabs">
-        {["overview", "orders", "products", "categories", "discounts"].map((t) => (
-          <button key={t} className={`tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)} style={{ textTransform: "capitalize" }}>{t}</button>
+        {["overview", "orders", "products", "categories", "discounts", "services"].map((t) => (
+          <button key={t} type="button" className={`tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)} style={{ textTransform: "capitalize" }}>{t}</button>
         ))}
       </div>
 
-      {/* OVERVIEW */}
       {tab === "overview" && (
         <>
           <div className="grid grid-4 mb">
-            <div className="stat-card"><div>📦</div><div className="stat-val">{stats?.products ?? "—"}</div><div className="stat-label">Products</div></div>
-            <div className="stat-card"><div>🧾</div><div className="stat-val">{stats?.orders ?? "—"}</div><div className="stat-label">Orders</div></div>
-            <div className="stat-card"><div>👥</div><div className="stat-val">{stats?.users ?? "—"}</div><div className="stat-label">Customers</div></div>
-            <div className="stat-card"><div>💰</div><div className="stat-val">{stats ? formatPrice(stats.revenue) : "—"}</div><div className="stat-label">Revenue</div></div>
+            <div className="stat-card"><div className="stat-val">{stats?.products ?? "—"}</div><div className="stat-label">Products</div></div>
+            <div className="stat-card"><div className="stat-val">{stats?.orders ?? "—"}</div><div className="stat-label">Orders</div></div>
+            <div className="stat-card"><div className="stat-val">{stats?.users ?? "—"}</div><div className="stat-label">Customers</div></div>
+            <div className="stat-card"><div className="stat-val">{stats ? formatPrice(stats.revenue) : "—"}</div><div className="stat-label">Revenue</div></div>
           </div>
           <div className="grid grid-2">
             <div className="card">
@@ -165,15 +162,21 @@ export default function Admin() {
         </>
       )}
 
-      {/* ORDERS */}
       {tab === "orders" && (
         <div className="card">
           <h3 className="mb">Manage Orders ({recentOrders.length})</h3>
           {recentOrders.map((o) => (
             <div key={o.id} style={{ border: "1px solid #eee", borderRadius: 6, padding: 12, marginBottom: 8 }}>
               <div className="flex between">
-                <div><b>Order #{o.id}</b><p className="muted">{o.shipFullName} · {o.shipPhone}</p><p className="muted">{o.shipAddress}</p></div>
-                <div style={{ textAlign: "right" }}><b>{formatPrice(o.total)}</b><p className="muted">{o.paymentMethod} · {o.paymentStatus}</p></div>
+                <div>
+                  <b>Order #{o.id}</b>
+                  <p className="muted">{o.shipFullName} · {o.shipPhone}</p>
+                  <p className="muted">{o.shipAddress}</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <b>{formatPrice(o.total)}</b>
+                  <p className="muted">{o.paymentMethod} · {o.paymentStatus}</p>
+                </div>
               </div>
               <div className="flex gap center mt">
                 <span className="muted">Status:</span>
@@ -186,7 +189,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* PRODUCTS */}
       {tab === "products" && (
         <div className="split-eq">
           <form className="card" onSubmit={submitProduct} style={{ height: "fit-content" }}>
@@ -201,13 +203,12 @@ export default function Admin() {
             <input className="input" type="number" placeholder="MRP (original price)" value={form.mrp} onChange={(e) => setForm({ ...form, mrp: e.target.value })} />
             <input className="input" type="number" placeholder="Stock quantity" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
             <textarea className="input" placeholder="Description" rows="3" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            <label className="muted" style={{ fontSize: 12 }}>Image URLs — one per line OR comma-separated (multiple pictures)</label>
-            <textarea className="input" rows="4" placeholder={"https://.../img1.jpg\nhttps://.../img2.jpg\nhttps://.../img3.jpg"} value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} />
+            <label className="muted" style={{ fontSize: 12 }}>Image URLs — one per line or comma-separated</label>
+            <textarea className="input" rows="3" placeholder="https://..." value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} />
             <label className="flex gap center mb"><input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} /> Featured (Deal of the day)</label>
             <button className="btn btn-blue" style={{ width: "100%" }}>{editingSlug ? "Update Product" : "Add Product"}</button>
-            {editingSlug && <button type="button" onClick={cancelEdit} className="btn mt" style={{ width: "100%", background: "#9e9e9e" }}>Cancel Edit</button>}
+            {editingSlug && <button type="button" onClick={() => { setEditingSlug(null); setForm(emptyForm); }} className="btn mt" style={{ width: "100%", background: "#9e9e9e" }}>Cancel Edit</button>}
           </form>
-
           <div className="card">
             <h3 className="mb">All Products ({products.length})</h3>
             <div style={{ maxHeight: 650, overflowY: "auto" }}>
@@ -217,14 +218,14 @@ export default function Admin() {
                   <div style={{ flex: 1 }}>
                     <div>{p.title}</div>
                     <span className="muted">
-                      {formatPrice(p.price)} {p.mrp > p.price && <s style={{ color: "#bbb" }}>{formatPrice(p.mrp)}</s>} ·{" "}
-                      <b style={{ color: p.stock <= 0 ? "#d32f2f" : p.stock <= 5 ? "#e65100" : "#388e3c" }}>Stock {p.stock}</b>
+                      {formatPrice(p.price)} {p.mrp > p.price && <s>{formatPrice(p.mrp)}</s>} ·{" "}
+                      <b style={{ color: p.stock <= 0 ? "#d32f2f" : "#2e7d32" }}>Stock {p.stock}</b>
                       {p.featured && " · ⭐"}
                     </span>
                   </div>
-                  <button onClick={() => startEdit(p)} style={btnMini("#e3f2fd", "#1565c0")}>Edit</button>
-                  <button onClick={() => applyProductDiscount(p.slug)} style={btnMini("#fff3e0", "#e65100")}>% Off</button>
-                  <button onClick={() => removeProduct(p.slug)} style={btnMini("#ffebee", "#d32f2f")}>Delete</button>
+                  <button type="button" onClick={() => startEdit(p)} style={btnMini("#e3f2fd", "#1565c0")}>Edit</button>
+                  <button type="button" onClick={() => applyProductDiscount(p.slug)} style={btnMini("#fff3e0", "#e65100")}>% Off</button>
+                  <button type="button" onClick={() => removeProduct(p.slug)} style={btnMini("#ffebee", "#d32f2f")}>Delete</button>
                 </div>
               ))}
             </div>
@@ -232,14 +233,12 @@ export default function Admin() {
         </div>
       )}
 
-      {/* CATEGORIES CRUD */}
       {tab === "categories" && (
         <div className="split-eq">
           <form className="card" onSubmit={submitCategory} style={{ height: "fit-content" }}>
             <h3 className="mb">{editingCatId ? "✏️ Edit Category" : "➕ Add Category"}</h3>
             <input className="input" placeholder="Category name" required value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} />
-            <input className="input" placeholder="Emoji (📱) OR image URL (https://…)" value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} />
-            <p className="muted" style={{ fontSize: 12, marginTop: -6, marginBottom: 8 }}>Paste an emoji, or a full image link like https://…/icon.png</p>
+            <input className="input" placeholder="Emoji or image URL" value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} />
             {catForm.icon && (
               <div className="flex center gap mb" style={{ padding: 8, background: "#f7f7f7", borderRadius: 8 }}>
                 Preview: <CategoryIcon icon={catForm.icon} size={36} />
@@ -254,20 +253,110 @@ export default function Admin() {
               <div key={c.id} className="flex gap center" style={{ border: "1px solid #eee", borderRadius: 6, padding: 8, marginBottom: 6 }}>
                 <CategoryIcon icon={c.icon} size={32} />
                 <div style={{ flex: 1 }}><b>{c.name}</b><span className="muted"> /{c.slug}</span></div>
-                <button onClick={() => startEditCat(c)} style={btnMini("#e3f2fd", "#1565c0")}>Edit</button>
-                <button onClick={() => removeCat(c.id)} style={btnMini("#ffebee", "#d32f2f")}>Delete</button>
+                <button type="button" onClick={() => { setEditingCatId(c.id); setCatForm({ name: c.name, icon: c.icon || "" }); }} style={btnMini("#e3f2fd", "#1565c0")}>Edit</button>
+                <button type="button" onClick={() => { if (window.confirm("Delete this category?")) CategoryAPI.remove(c.id).then(() => { toast("Category deleted"); CategoryAPI.list().then(setCats); }); }} style={btnMini("#ffebee", "#d32f2f")}>Delete</button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* DISCOUNTS */}
+      {tab === "services" && (
+        <div className="space-y-4">
+          <div className="grid grid-4 mb">
+            <div className="stat-card"><div className="stat-val">{complaints.length}</div><div className="stat-label">Complaints</div></div>
+            <div className="stat-card"><div className="stat-val">{complaints.filter((c) => c.status === "Pending").length}</div><div className="stat-label">Pending</div></div>
+            <div className="stat-card"><div className="stat-val">{technicians.filter((t) => t.status === "Available").length}</div><div className="stat-label">Available techs</div></div>
+            <div className="stat-card"><div className="stat-val">₹{VISIT_FEE}</div><div className="stat-label">Visit fee</div></div>
+          </div>
+
+          <div className="card mb">
+            <h3 className="mb">Add technician</h3>
+            <form className="grid grid-2" onSubmit={async (e) => {
+              e.preventDefault();
+              await AdminAPI.addTechnician(techForm);
+              toast("Technician added");
+              setTechForm({ name: "", phone: "", specialization: "AC & Refrigerator Expert" });
+              AdminAPI.technicians().then(setTechnicians);
+            }}>
+              <input className="input" placeholder="Name" required value={techForm.name} onChange={(e) => setTechForm({ ...techForm, name: e.target.value })} />
+              <input className="input" placeholder="WhatsApp 10-digit" required maxLength={10} value={techForm.phone} onChange={(e) => setTechForm({ ...techForm, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+              <select className="input" value={techForm.specialization} onChange={(e) => setTechForm({ ...techForm, specialization: e.target.value })}>
+                <option>AC & Refrigerator Expert</option>
+                <option>Wiring & Heavy Electricals</option>
+                <option>Washing Machine & Geyser</option>
+                <option>General Appliances & Fans</option>
+              </select>
+              <button className="btn btn-blue">Save electrician</button>
+            </form>
+            <div className="grid grid-2 mt">
+              {technicians.map((t) => (
+                <div key={t.id} className="card" style={{ border: "1px solid #eee" }}>
+                  <b>{t.name}</b>
+                  <div className="muted">{t.specialization}</div>
+                  <div className="muted">+91 {t.phone} · {t.status} · jobs {t.activeJobs}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="flex between center mb">
+              <h3>Complaints</h3>
+              <select className="input" style={{ width: "auto", margin: 0 }} value={svcFilter} onChange={(e) => setSvcFilter(e.target.value)}>
+                {["All", "Pending", "Technician Assigned", "In Progress", "Completed"].map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            {complaints.filter((c) => svcFilter === "All" || c.status === svcFilter).map((c) => (
+              <div key={c.id} className="card mb" style={{ border: "1px solid #eee" }}>
+                <div className="flex between">
+                  <b>#{c.complaintNo}</b>
+                  <span className="status-pill">{c.status}</span>
+                </div>
+                <p>{c.customerName} · <a href={`tel:${c.phone}`}>+91 {c.phone}</a></p>
+                <p className="muted">{c.address} {c.landmark && `(${c.landmark})`}</p>
+                <p><b>{c.serviceName}</b></p>
+                <p className="muted">{(c.selectedProblems || []).join(", ")}</p>
+                {c.notes && <p className="muted">Note: {c.notes}</p>}
+                <p className="muted">Visit ₹{c.visitCharge}</p>
+                <div className="flex gap center mt" style={{ flexWrap: "wrap" }}>
+                  <select className="input" style={{ width: "auto", margin: 0 }} value={c.assignedTechId || ""} onChange={async (e) => {
+                    await AdminAPI.updateComplaint(c.id, { techId: e.target.value });
+                    toast("Technician assigned");
+                    AdminAPI.complaints().then(setComplaints);
+                    AdminAPI.technicians().then(setTechnicians);
+                  }}>
+                    <option value="">-- Available electrician --</option>
+                    {technicians.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name} ({t.status})</option>
+                    ))}
+                  </select>
+                  {c.assignedTechPhone && (
+                    <a className="btn" style={{ background: "#25d366", padding: "8px 12px" }}
+                      href={whatsappDispatchUrl(c, c.assignedTechPhone)} target="_blank" rel="noreferrer">
+                      WhatsApp tech
+                    </a>
+                  )}
+                  <select className="input" style={{ width: "auto", margin: 0 }} value={c.status} onChange={async (e) => {
+                    await AdminAPI.updateComplaint(c.id, { status: e.target.value });
+                    AdminAPI.complaints().then(setComplaints);
+                    AdminAPI.technicians().then(setTechnicians);
+                  }}>
+                    {["Pending", "Technician Assigned", "In Progress", "Completed"].map((s) => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+            ))}
+            {complaints.length === 0 && <p className="muted">No complaints yet. Customers book from Shop → Service.</p>}
+          </div>
+        </div>
+      )}
+
       {tab === "discounts" && (
         <div className="grid grid-2">
           <form className="card" onSubmit={applyCategoryDiscount}>
             <h3 className="mb">🏷️ Discount an entire Category</h3>
-            <p className="muted mb">Sets each product's price to MRP minus the % you enter.</p>
+            <p className="muted mb">Sets each product price to MRP minus the % you enter.</p>
             <select className="input" value={catDiscount.categoryId} onChange={(e) => setCatDiscount({ ...catDiscount, categoryId: e.target.value })}>
               <option value="">Select category</option>
               {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -277,7 +366,7 @@ export default function Admin() {
           </form>
           <div className="card">
             <h3 className="mb">Single Product Discount</h3>
-            <p className="muted">Go to the <b>Products</b> tab and click the <b>% Off</b> button on any product to set a discount (e.g. 50%) for just that product.</p>
+            <p className="muted">Go to the <b>Products</b> tab and click <b>% Off</b> on any product.</p>
           </div>
         </div>
       )}

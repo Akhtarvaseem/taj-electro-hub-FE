@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import About from "./pages/About";
 import Developer from "./pages/Developer";
+import Service from "./pages/Service";
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/about" element={<About />} />
           <Route path="/developer" element={<Developer />} />
+          <Route path="/service" element={<Service />} />
         </Routes>
       </main>
       <Footer />

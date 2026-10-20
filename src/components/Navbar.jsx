@@ -66,6 +66,7 @@ export default function Navbar() {
             ) : (
               <Link to="/login" className="btn-login">Login</Link>
             )}
+            <Link to="/service">🛠️ Service</Link>
             <Link to="/wishlist">♥ Wishlist{wishCount > 0 && <span className="badge">{wishCount}</span>}</Link>
             <Link to="/cart">🛒 Cart{cartCount > 0 && <span className="badge">{cartCount}</span>}</Link>
           </nav>
@@ -88,6 +89,7 @@ export default function Navbar() {
               </div>
               <div><b>{user.name}</b><div className="muted">{user.email}</div></div>
             </div>
+            <Link to="/service" onClick={() => setMobileOpen(false)}>🛠️ Book Service</Link>
             <Link to="/about" onClick={() => setMobileOpen(false)}>ℹ️ About Us</Link>
             <Link to="/dashboard" onClick={() => setMobileOpen(false)}>📊 Dashboard</Link>
             <Link to="/account" onClick={() => setMobileOpen(false)}>👤 My Profile</Link>
@@ -100,6 +102,7 @@ export default function Navbar() {
         ) : (
           <>
             <Link to="/login" onClick={() => setMobileOpen(false)}>🔑 Login / Sign Up</Link>
+            <Link to="/service" onClick={() => setMobileOpen(false)}>🛠️ Book Service</Link>
             <Link to="/about" onClick={() => setMobileOpen(false)}>ℹ️ About Us</Link>
             <Link to="/products" onClick={() => setMobileOpen(false)}>🛍️ All Products</Link>
             <Link to="/cart" onClick={() => setMobileOpen(false)}>🛒 Cart ({cartCount})</Link>

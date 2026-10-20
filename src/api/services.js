@@ -58,8 +58,8 @@ export const AddressAPI = {
 
 export const OrderAPI = {
   list: () => api.get("/orders").then((r) => r.data.orders),
-  place: (addressData, paymentMethod = "COD") =>
-    api.post("/orders", { addressData, paymentMethod }).then((r) => r.data),
+  place: (addressData, paymentMethod = "COD", couponCode) =>
+    api.post("/orders", { addressData, paymentMethod, couponCode }).then((r) => r.data),
   cancel: (id) => api.patch(`/orders/${id}/cancel`).then((r) => r.data),
 };
 
@@ -67,8 +67,48 @@ export const ReviewAPI = {
   create: (data) => api.post("/reviews", data).then((r) => r.data),
 };
 
+export const BrandAPI = {
+  list: () => api.get("/brands").then((r) => r.data.brands || []),
+};
+
+export const BannerAPI = {
+  list: () => api.get("/banners").then((r) => r.data.banners || []),
+};
+
+export const CouponAPI = {
+  validate: (code, amount) =>
+    api.get("/coupons/validate", { params: { code, amount } }).then((r) => r.data),
+};
+
+export const ServiceAPI = {
+  book: (data) => api.post("/complaints", data).then((r) => r.data),
+  mine: () => api.get("/complaints/mine").then((r) => r.data.complaints || []),
+};
+
 export const AdminAPI = {
   stats: () => api.get("/admin/stats").then((r) => r.data),
   updateOrder: (id, status) =>
     api.patch("/admin/orders", { id, status }).then((r) => r.data),
+  brands: () => api.get("/admin/brands").then((r) => r.data.brands || []),
+  createBrand: (d) => api.post("/admin/brands", d).then((r) => r.data),
+  updateBrand: (id, d) => api.put(`/admin/brands/${id}`, d).then((r) => r.data),
+  deleteBrand: (id) => api.delete(`/admin/brands/${id}`).then((r) => r.data),
+  coupons: () => api.get("/admin/coupons").then((r) => r.data.coupons || []),
+  createCoupon: (d) => api.post("/admin/coupons", d).then((r) => r.data),
+  updateCoupon: (id, d) => api.put(`/admin/coupons/${id}`, d).then((r) => r.data),
+  deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`).then((r) => r.data),
+  banners: () => api.get("/admin/banners").then((r) => r.data.banners || []),
+  createBanner: (d) => api.post("/admin/banners", d).then((r) => r.data),
+  deleteBanner: (id) => api.delete(`/admin/banners/${id}`).then((r) => r.data),
+  customers: () => api.get("/admin/customers").then((r) => r.data.customers || []),
+  reviews: () => api.get("/admin/reviews").then((r) => r.data.reviews || []),
+  deleteReview: (id) => api.delete(`/admin/reviews/${id}`).then((r) => r.data),
+  setStock: (productId, stock) =>
+    api.patch("/admin/inventory", { productId, stock }).then((r) => r.data),
+  reports: () => api.get("/admin/reports").then((r) => r.data),
+  complaints: () => api.get("/admin/complaints").then((r) => r.data.complaints || []),
+  updateComplaint: (id, data) => api.patch(`/admin/complaints/${id}`, data).then((r) => r.data),
+  technicians: () => api.get("/admin/technicians").then((r) => r.data.technicians || []),
+  addTechnician: (d) => api.post("/admin/technicians", d).then((r) => r.data),
+  deleteTechnician: (id) => api.delete(`/admin/technicians/${id}`).then((r) => r.data),
 };
