@@ -6,7 +6,7 @@ const RAW_BASE =
   import.meta.env.VITE_API_BASE_URL !== undefined &&
   import.meta.env.VITE_API_BASE_URL !== ""
     ? import.meta.env.VITE_API_BASE_URL
-    // : "http://localhost:8080";
+    // : "http://localhost:8080"
     : "https://taj-electro-hub-be.onrender.com";
 
 const api = axios.create({

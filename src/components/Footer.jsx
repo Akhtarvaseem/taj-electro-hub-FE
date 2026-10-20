@@ -8,6 +8,7 @@ export default function Footer() {
           <h4>About the shop</h4>
           <ul>
             <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/service">Book a technician</Link></li>
             <li><Link to="/about">Contact &amp; hours</Link></li>
             <li>Location</li>
           </ul>
